@@ -1,7 +1,7 @@
-package com.cuidadodemascotas.microservice.apis.repositories;
+package com.cuidadodemascotas.microservice.repository;
 
-import org.example.cuidadodemascota.commons.entities.reservation.Reservation;
 import org.example.cuidadodemascota.commons.entities.enums.ReservationStateEnum;
+import org.example.cuidadodemascota.commons.entities.reservation.Reservation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,7 +17,7 @@ import java.util.Optional;
  * Incluye queries personalizadas para búsquedas con filtros
  */
 @Repository
-public interface ReservationRepository extends JpaRepository<Reservation, Long> {
+public interface IReservationRepository extends JpaRepository<Reservation, Long> {
 
     /**
      * Busca una reservación por ID que esté activa

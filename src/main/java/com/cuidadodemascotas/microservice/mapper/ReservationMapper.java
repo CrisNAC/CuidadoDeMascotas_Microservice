@@ -1,9 +1,13 @@
 package com.cuidadodemascotas.microservice.mapper;
 
+import com.cuidadodemascotas.microservice.repository.ICarerRepository;
+import com.cuidadodemascotas.microservice.repository.IOwnerRepository;
+import com.cuidadodemascotas.microservice.repository.IServiceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.cuidadodemascota.commons.dto.ReservationRequestDTO;
 import org.example.cuidadodemascota.commons.dto.ReservationResponseDTO;
+import org.example.cuidadodemascota.commons.entities.enums.ReservationStateEnum;
 import org.example.cuidadodemascota.commons.entities.reservation.Reservation;
 import org.example.cuidadodemascota.commons.entities.user.Carer;
 import org.example.cuidadodemascota.commons.entities.user.Owner;
@@ -21,7 +25,11 @@ import java.time.OffsetDateTime;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ReservationMapper {
+public class ReservationMapper implements IBaseMapper<Reservation, ReservationRequestDTO, ReservationResponseDTO> {
+
+    private IOwnerRepository ownerRepository;
+    private ICarerRepository carerRepository;
+    private IServiceRepository serviceRepository;
 
     /**
      * Convierte Request DTO a Entity (para creación)
@@ -37,7 +45,11 @@ public class ReservationMapper {
 
         Reservation entity = new Reservation();
         entity.setServiceDate(dto.getServiceDate().toLocalDateTime());
-        entity.setState(dto.getReservationState());
+
+        // Convertir enum de DTO a Entity
+        if (dto.getReservationState() != null) {
+            entity.setState(convertToEntityEnum(dto.getReservationState()));
+        }
 
         log.debug("Entity creada: serviceDate={}, state={}",
                 entity.getServiceDate(), entity.getState());
@@ -56,7 +68,7 @@ public class ReservationMapper {
             entity.setServiceDate(dto.getServiceDate().toLocalDateTime());
         }
         if (dto.getReservationState() != null) {
-            entity.setState(dto.getReservationState());
+            entity.setState(convertToEntityEnum(dto.getReservationState()));
         }
 
         log.debug("Entity actualizada: serviceDate={}, state={}",
@@ -67,7 +79,7 @@ public class ReservationMapper {
      * Convierte Entity a Response DTO
      * IMPORTANTE: Solo mapea IDs de las relaciones para evitar lazy loading
      */
-    public ReservationResponseDTO toResponseDTO(Reservation entity) {
+    public ReservationResponseDTO toDto(Reservation entity) {
         log.debug("Convirtiendo Reservation Entity a ResponseDTO");
 
         if (entity == null) {
@@ -78,7 +90,12 @@ public class ReservationMapper {
         ReservationResponseDTO dto = new ReservationResponseDTO();
         dto.setId(entity.getId());
         dto.setServiceDate(OffsetDateTime.from(entity.getServiceDate()));
-        dto.setReservationState(entity.getState());
+
+        // Convertir enum de Entity a DTO
+        if (entity.getState() != null) {
+            dto.setReservationState(convertToDtoEnum(entity.getState()));
+        }
+
         dto.setCreatedAt(OffsetDateTime.from(entity.getCreatedAt()));
         dto.setUpdatedAt(OffsetDateTime.from(entity.getUpdatedAt()));
         dto.setActive(entity.getActive());
@@ -96,4 +113,48 @@ public class ReservationMapper {
 
         return dto;
     }
+
+    /**
+     * Configura las relaciones de la entity (Owner y Carer)
+     * Se llama desde el servicio después de buscar las entidades relacionadas
+     */
+    public void setRelations(Reservation entity, Owner owner, Carer carer) {
+        log.debug("Configurando relaciones para Reservation");
+
+        if (owner != null) {
+            entity.setOwner(owner);
+            log.debug("Owner configurado: ID={}", owner.getId());
+        }
+        if (carer != null) {
+            entity.setCarer(carer);
+            log.debug("Carer configurado: ID={}", carer.getId());
+        }
+    }
+
+    // ========== MÉTODOS DE CONVERSIÓN DE ENUMS ==========
+
+    /**
+     * Convierte el enum del DTO al enum de la Entity
+     */
+    private ReservationStateEnum convertToEntityEnum(ReservationRequestDTO.ReservationStateEnum dtoEnum) {
+        if (dtoEnum == null) {
+            return null;
+        }
+
+        // Convertir por nombre (ambos deben tener los mismos valores)
+        return ReservationStateEnum.valueOf(dtoEnum.name());
+    }
+
+    /**
+     * Convierte el enum de la Entity al enum del DTO
+     */
+    private ReservationResponseDTO.ReservationStateEnum convertToDtoEnum(ReservationStateEnum entityEnum) {
+        if (entityEnum == null) {
+            return null;
+        }
+
+        // Convertir por nombre (ambos deben tener los mismos valores)
+        return ReservationResponseDTO.ReservationStateEnum.valueOf(entityEnum.name());
+    }
+
 }

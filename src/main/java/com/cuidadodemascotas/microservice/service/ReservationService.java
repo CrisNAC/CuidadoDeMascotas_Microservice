@@ -1,9 +1,9 @@
-package com.cuidadodemascotas.microservice.apis.services;
+package com.cuidadodemascotas.microservice.service;
 
 import com.cuidadodemascotas.microservice.exception.BusinessValidationException;
 import com.cuidadodemascotas.microservice.exception.ResourceNotFoundException;
 import com.cuidadodemascotas.microservice.mapper.ReservationMapper;
-import com.cuidadodemascotas.microservice.apis.repositories.ReservationRepository;
+import com.cuidadodemascotas.microservice.repository.IReservationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.cuidadodemascota.commons.dto.ReservationRequestDTO;
@@ -27,7 +27,7 @@ import java.time.OffsetDateTime;
 @RequiredArgsConstructor
 public class ReservationService {
 
-    private final ReservationRepository reservationRepository;
+    private final IReservationRepository IReservationRepository;
     private final ReservationMapper reservationMapper;
 
     /**
@@ -47,7 +47,7 @@ public class ReservationService {
         reservation.setActive(true);
 
         // Guardar
-        Reservation saved = reservationRepository.save(reservation);
+        Reservation saved = IReservationRepository.save(reservation);
         log.info("Reservation creada exitosamente con ID: {}", saved.getId());
 
         return reservationMapper.toResponseDTO(saved);
@@ -61,7 +61,7 @@ public class ReservationService {
         log.info("Actualizando Reservation ID: {}", id);
 
         // Buscar reservación existente
-        Reservation existing = reservationRepository.findByIdAndActiveTrue(id)
+        Reservation existing = IReservationRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> {
                     log.error("Reservation con ID {} no encontrada", id);
                     return new ResourceNotFoundException("Reservation", id);
@@ -77,7 +77,7 @@ public class ReservationService {
         reservationMapper.updateEntityFromDto(existing, requestDTO);
 
         // Guardar
-        Reservation updated = reservationRepository.save(existing);
+        Reservation updated = IReservationRepository.save(existing);
         log.info("Reservation ID: {} actualizada exitosamente", id);
 
         return reservationMapper.toResponseDTO(updated);
@@ -90,7 +90,7 @@ public class ReservationService {
     public ReservationResponseDTO findById(Long id) {
         log.info("Buscando Reservation por ID: {}", id);
 
-        Reservation reservation = reservationRepository.findByIdAndActiveTrue(id)
+        Reservation reservation = IReservationRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> {
                     log.error("Reservation con ID {} no encontrada", id);
                     return new ResourceNotFoundException("Reservation", id);
@@ -108,7 +108,7 @@ public class ReservationService {
         log.info("Obteniendo todas las Reservations - Página: {}, Tamaño: {}",
                 pageable.getPageNumber(), pageable.getPageSize());
 
-        Page<Reservation> page = reservationRepository.findByActiveTrue(pageable);
+        Page<Reservation> page = IReservationRepository.findByActiveTrue(pageable);
 
         log.info("Se encontraron {} Reservations en la página {}",
                 page.getNumberOfElements(), page.getNumber());
@@ -128,7 +128,7 @@ public class ReservationService {
         log.info("Buscando Reservations con filtros - OwnerId: {}, CarerId: {}, State: {}",
                 ownerId, carerId, state);
 
-        Page<Reservation> page = reservationRepository.findByFilters(
+        Page<Reservation> page = IReservationRepository.findByFilters(
                 ownerId, carerId, state, startDate, endDate, pageable);
 
         log.info("Se encontraron {} Reservations con los filtros aplicados", page.getTotalElements());
@@ -143,7 +143,7 @@ public class ReservationService {
     public void delete(Long id) {
         log.info("Eliminando (borrado lógico) Reservation ID: {}", id);
 
-        Reservation reservation = reservationRepository.findByIdAndActiveTrue(id)
+        Reservation reservation = IReservationRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> {
                     log.error("Reservation con ID {} no encontrada para eliminar", id);
                     return new ResourceNotFoundException("Reservation", id);
@@ -157,7 +157,7 @@ public class ReservationService {
 
         // Borrado lógico
         reservation.setActive(false);
-        reservationRepository.save(reservation);
+        IReservationRepository.save(reservation);
 
         log.info("Reservation ID: {} eliminada (borrado lógico) exitosamente", id);
     }

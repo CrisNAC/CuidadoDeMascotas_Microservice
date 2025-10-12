@@ -1,0 +1,42 @@
+2025-10-10T19:39:43.057-03:00  INFO 13672 --- [microservice] [restartedMain] c.c.m.MicroserviceApplication            : Starting MicroserviceApplication using Java 21.0.8 with PID 13672 (C:\Users\usuario\OneDrive\Escritorio\microservice\target\classes started by usuario in C:\Users\usuario\OneDrive\Escritorio\microservice)
+2025-10-10T19:39:43.061-03:00  INFO 13672 --- [microservice] [restartedMain] c.c.m.MicroserviceApplication            : No active profile set, falling back to 1 default profile: "default"
+2025-10-10T19:39:43.568-03:00  INFO 13672 --- [microservice] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2025-10-10T19:39:43.568-03:00  INFO 13672 --- [microservice] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2025-10-10T19:39:55.333-03:00  INFO 13672 --- [microservice] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-10-10T19:39:55.737-03:00  INFO 13672 --- [microservice] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 346 ms. Found 2 JPA repository interfaces.
+2025-10-10T19:40:04.615-03:00  INFO 13672 --- [microservice] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8081 (http)
+2025-10-10T19:40:04.826-03:00  INFO 13672 --- [microservice] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-10-10T19:40:04.827-03:00  INFO 13672 --- [microservice] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.46]
+2025-10-10T19:40:05.139-03:00  INFO 13672 --- [microservice] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-10-10T19:40:05.139-03:00  INFO 13672 --- [microservice] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 21551 ms
+2025-10-10T19:40:07.790-03:00  INFO 13672 --- [microservice] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-10-10T19:40:21.827-03:00  INFO 13672 --- [microservice] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@157260e
+2025-10-10T19:40:21.829-03:00  INFO 13672 --- [microservice] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-10-10T19:40:24.200-03:00  INFO 13672 --- [microservice] [restartedMain] liquibase.database                       : Set default schema name to public
+2025-10-10T19:40:26.012-03:00  INFO 13672 --- [microservice] [restartedMain] liquibase.command                        : Logging exception.
+2025-10-10T19:40:26.013-03:00  INFO 13672 --- [microservice] [restartedMain] liquibase.ui                             : ERROR: Exception Details
+2025-10-10T19:40:26.013-03:00  INFO 13672 --- [microservice] [restartedMain] liquibase.ui                             : ERROR: Exception Primary Class:  ChangeLogParseException
+2025-10-10T19:40:26.013-03:00  INFO 13672 --- [microservice] [restartedMain] liquibase.ui                             : ERROR: Exception Primary Reason:  classpath:/db/changelog/db.changelog-master.yaml does not exist
+2025-10-10T19:40:26.013-03:00  INFO 13672 --- [microservice] [restartedMain] liquibase.ui                             : ERROR: Exception Primary Source:  4.31.1
+2025-10-10T19:40:26.014-03:00  INFO 13672 --- [microservice] [restartedMain] liquibase.command                        : Command execution complete
+2025-10-10T19:40:27.585-03:00  WARN 13672 --- [microservice] [restartedMain] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'entityManagerFactory' defined in class path resource [org/springframework/boot/autoconfigure/orm/jpa/HibernateJpaConfiguration.class]: Failed to initialize dependency 'liquibase' of LoadTimeWeaverAware bean 'entityManagerFactory': Error creating bean with name 'liquibase' defined in class path resource [org/springframework/boot/autoconfigure/liquibase/LiquibaseAutoConfiguration$LiquibaseConfiguration.class]: liquibase.exception.CommandExecutionException: liquibase.exception.ChangeLogParseException: classpath:/db/changelog/db.changelog-master.yaml does not exist
+2025-10-10T19:40:27.587-03:00  INFO 13672 --- [microservice] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-10-10T19:40:28.021-03:00  INFO 13672 --- [microservice] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2025-10-10T19:40:28.047-03:00  INFO 13672 --- [microservice] [restartedMain] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]
+2025-10-10T19:40:28.381-03:00  INFO 13672 --- [microservice] [restartedMain] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2025-10-10T19:40:28.584-03:00 ERROR 13672 --- [microservice] [restartedMain] o.s.b.d.LoggingFailureAnalysisReporter   : 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Liquibase failed to start because no changelog could be found at 'classpath:/db/changelog/db.changelog-master.yaml'.
+
+Action:
+
+Make sure a Liquibase changelog is present at the configured path.
+

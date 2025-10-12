@@ -1,4 +1,4 @@
-package com.cuidadodemascotas.microservice.apis.repositories;
+package com.cuidadodemascotas.microservice.repository;
 
 import org.example.cuidadodemascota.commons.entities.reservation.ReservationService;
 import org.springframework.data.domain.Page;
@@ -15,7 +15,7 @@ import java.util.Optional;
  * Repositorio para la entidad ReservationService (relación muchos-a-muchos)
  */
 @Repository
-public interface ReservationServiceRepository extends JpaRepository<ReservationService, Long> {
+public interface IReservationServiceRepository extends JpaRepository<ReservationService, Long> {
 
     /**
      * Busca un ReservationService por ID que esté activo

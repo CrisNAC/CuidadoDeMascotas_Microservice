@@ -1,6 +1,6 @@
-package com.cuidadodemascotas.microservice.apis.controllers;
+package com.cuidadodemascotas.microservice.controller;
 
-import com.cuidadodemascotas.microservice.apis.services.ReservationService;
+import com.cuidadodemascotas.microservice.service.ReservationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
