@@ -1,6 +1,6 @@
 package com.cuidadodemascotas.microservice.controller;
 
-import com.cuidadodemascotas.microservice.service.ReservationServiceService;
+import com.cuidadodemascotas.microservice.service.reservationservice.ReservationServiceServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -29,7 +29,7 @@ import java.util.List;
 @Tag(name = "Reservation Services", description = "API para gestionar la relación entre Reservaciones y Servicios")
 public class ReservationServiceController {
 
-    private final ReservationServiceService reservationServiceService;
+    private final ReservationServiceServiceImpl reservationServiceServiceImpl;
 
     // ===== CREATE =====
     @Operation(summary = "Crear una nueva relación Reservation-Service",
@@ -48,7 +48,7 @@ public class ReservationServiceController {
         log.info("POST /reservation-services - Crear relación Reservation-Service");
         log.debug("Request body: {}", requestDTO);
 
-        ReservationServiceResponseDTO response = reservationServiceService.create(requestDTO);
+        ReservationServiceResponseDTO response = reservationServiceServiceImpl.save(requestDTO);
 
         log.info("Relación creada con ID: {}", response.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -68,7 +68,7 @@ public class ReservationServiceController {
 
         log.info("GET /reservation-services/{} - Buscar por ID", id);
 
-        ReservationServiceResponseDTO response = reservationServiceService.findById(id);
+        ReservationServiceResponseDTO response = reservationServiceServiceImpl.getById(id);
 
         log.info("Relación encontrada con ID: {}", id);
         return ResponseEntity.ok(response);
@@ -93,7 +93,7 @@ public class ReservationServiceController {
         Sort.Direction direction = sortDir.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
-        Page<ReservationServiceResponseDTO> response = reservationServiceService.findAll(pageable);
+        Page<ReservationServiceResponseDTO> response = reservationServiceServiceImpl.findAll(pageable);
 
         log.info("Se obtuvieron {} relaciones de {} totales",
                 response.getNumberOfElements(), response.getTotalElements());
@@ -122,7 +122,7 @@ public class ReservationServiceController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
         Page<ReservationServiceResponseDTO> response =
-                reservationServiceService.findByFilters(reservationId, serviceId, pageable);
+                reservationServiceServiceImpl.findByFilters(reservationId, serviceId, pageable);
 
         log.info("Búsqueda completada: {} resultados encontrados", response.getTotalElements());
         return ResponseEntity.ok(response);
@@ -138,7 +138,7 @@ public class ReservationServiceController {
         log.info("GET /reservation-services/by-reservation/{} - Buscar servicios", reservationId);
 
         List<ReservationServiceResponseDTO> response =
-                reservationServiceService.findByReservationId(reservationId);
+                reservationServiceServiceImpl.findByReservationId(reservationId);
 
         return ResponseEntity.ok(response);
     }
@@ -153,7 +153,7 @@ public class ReservationServiceController {
         log.info("GET /reservation-services/by-service/{} - Buscar reservaciones", serviceId);
 
         List<ReservationServiceResponseDTO> response =
-                reservationServiceService.findByServiceId(serviceId);
+                reservationServiceServiceImpl.findByServiceId(serviceId);
 
         return ResponseEntity.ok(response);
     }
@@ -171,7 +171,7 @@ public class ReservationServiceController {
 
         log.info("DELETE /reservation-services/{} - Eliminar relación", id);
 
-        reservationServiceService.delete(id);
+        reservationServiceServiceImpl.delete(id);
 
         log.info("Relación ID: {} eliminada exitosamente", id);
         return ResponseEntity.noContent().build();
@@ -185,7 +185,7 @@ public class ReservationServiceController {
 
         log.info("DELETE /reservation-services/by-reservation/{} - Eliminar todas las relaciones", reservationId);
 
-        reservationServiceService.deleteAllByReservationId(reservationId);
+        reservationServiceServiceImpl.deleteAllByReservationId(reservationId);
 
         log.info("Relaciones de la reservación {} eliminadas exitosamente", reservationId);
         return ResponseEntity.noContent().build();

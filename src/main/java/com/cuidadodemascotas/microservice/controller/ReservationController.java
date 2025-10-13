@@ -1,6 +1,6 @@
 package com.cuidadodemascotas.microservice.controller;
 
-import com.cuidadodemascotas.microservice.service.ReservationService;
+import com.cuidadodemascotas.microservice.service.reservation.ReservationServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -35,7 +35,7 @@ import java.time.LocalDateTime;
 @Tag(name = "Reservations", description = "API para gestión de reservaciones")
 public class ReservationController {
 
-    private final ReservationService reservationService;
+    private final ReservationServiceImpl reservationServiceImpl;
 
     @Operation(summary = "Crear una nueva reservación",
             description = "Crea una nueva reservación validando owner, carer y disponibilidad")
@@ -53,7 +53,7 @@ public class ReservationController {
         log.info("POST /reservations - Crear nueva reservación");
         log.debug("Request body: {}", requestDTO);
 
-        ReservationResponseDTO response = reservationService.create(requestDTO);
+        ReservationResponseDTO response = reservationServiceImpl.save(requestDTO);
 
         log.info("Reservación creada exitosamente con ID: {}", response.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -75,7 +75,7 @@ public class ReservationController {
         log.info("PUT /reservations/{} - Actualizar reservación", id);
         log.debug("Request body: {}", requestDTO);
 
-        ReservationResponseDTO response = reservationService.update(id, requestDTO);
+        ReservationResponseDTO response = reservationServiceImpl.update(id, requestDTO);
 
         log.info("Reservación ID: {} actualizada exitosamente", id);
         return ResponseEntity.ok(response);
@@ -94,7 +94,7 @@ public class ReservationController {
 
         log.info("GET /reservations/{} - Obtener reservación por ID", id);
 
-        ReservationResponseDTO response = reservationService.findById(id);
+        ReservationResponseDTO response = reservationServiceImpl.getById(id);
 
         log.info("Reservación ID: {} encontrada", id);
         return ResponseEntity.ok(response);
@@ -122,7 +122,7 @@ public class ReservationController {
         Sort.Direction direction = sortDir.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
-        Page<ReservationResponseDTO> response = reservationService.findAll(pageable);
+        Page<ReservationResponseDTO> response = reservationServiceImpl.findAll(pageable);
 
         log.info("Se obtuvieron {} reservaciones de {} totales",
                 response.getNumberOfElements(), response.getTotalElements());
@@ -159,7 +159,7 @@ public class ReservationController {
         Sort.Direction direction = sortDir.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
-        Page<ReservationResponseDTO> response = reservationService.findByFilters(
+        Page<ReservationResponseDTO> response = reservationServiceImpl.findByFilters(
                 ownerId, carerId, state, startDate, endDate, pageable);
 
         log.info("Búsqueda completada: {} resultados encontrados", response.getTotalElements());
@@ -179,7 +179,7 @@ public class ReservationController {
 
         log.info("DELETE /reservations/{} - Eliminar reservación", id);
 
-        reservationService.delete(id);
+        reservationServiceImpl.delete(id);
 
         log.info("Reservación ID: {} eliminada exitosamente", id);
         return ResponseEntity.noContent().build();

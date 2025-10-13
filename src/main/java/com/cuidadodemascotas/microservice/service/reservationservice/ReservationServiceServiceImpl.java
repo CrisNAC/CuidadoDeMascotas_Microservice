@@ -1,15 +1,17 @@
-package com.cuidadodemascotas.microservice.service;
+package com.cuidadodemascotas.microservice.service.reservationservice;
 
 import com.cuidadodemascotas.microservice.exception.BusinessValidationException;
 import com.cuidadodemascotas.microservice.exception.ResourceConflictException;
 import com.cuidadodemascotas.microservice.exception.ResourceNotFoundException;
 import com.cuidadodemascotas.microservice.mapper.ReservationServiceMapper;
-import com.cuidadodemascotas.microservice.repository.IReservationRepository;
 import com.cuidadodemascotas.microservice.repository.IReservationServiceRepository;
+import com.cuidadodemascotas.microservice.repository.IServiceRepository;
+import com.cuidadodemascotas.microservice.service.base.BaseServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.cuidadodemascota.commons.dto.ReservationServiceRequestDTO;
 import org.example.cuidadodemascota.commons.dto.ReservationServiceResponseDTO;
+import org.example.cuidadodemascota.commons.dto.ReservationServiceResult;
 import org.example.cuidadodemascota.commons.entities.reservation.Reservation;
 import org.example.cuidadodemascota.commons.entities.reservation.ReservationService;
 import org.example.cuidadodemascota.commons.entities.service.Service;
@@ -27,18 +29,29 @@ import java.util.stream.Collectors;
 @Slf4j
 @org.springframework.stereotype.Service
 @RequiredArgsConstructor
-public class ReservationServiceService {
+public class ReservationServiceServiceImpl
+        extends BaseServiceImpl<ReservationServiceRequestDTO, ReservationServiceResponseDTO, ReservationService, ReservationServiceResult>
+        implements IReservationServiceService {
 
-    private final IReservationServiceRepository IReservationServiceRepository;
-    private final IReservationRepository IReservationRepository;
+    private final IReservationServiceRepository reservationServiceRepository;
+    private final IReservationServiceRepository reservationRepository;
+    private final IServiceRepository serviceRepository;
     private final ReservationServiceMapper reservationServiceMapper;
+
+    protected ReservationServiceResponseDTO convertEntityToDto(ReservationService entity) {
+        return reservationServiceMapper.toDto(entity);
+    }
+
+    protected ReservationService convertDtoToEntity(ReservationServiceRequestDTO dto) {
+        return reservationServiceMapper.toEntity(dto);
+    }
 
     /**
      * Crea una nueva relación Reservation-Service
      * Valida que no exista duplicidad
      */
     @Transactional
-    public ReservationServiceResponseDTO create(ReservationServiceRequestDTO requestDTO) {
+    public ReservationServiceResponseDTO save(ReservationServiceRequestDTO requestDTO) {
         log.info("Creando ReservationService - ReservationId: {}, ServiceId: {}",
                 requestDTO.getReservationId(), requestDTO.getServiceId());
 
@@ -46,7 +59,7 @@ public class ReservationServiceService {
         validateRequest(requestDTO);
 
         // Verificar que no exista ya la relación
-        boolean exists = IReservationServiceRepository.existsByReservationIdAndServiceIdAndActiveTrue(
+        boolean exists = reservationServiceRepository.existsByReservationIdAndServiceIdAndActiveTrue(
                 Long.valueOf(requestDTO.getReservationId()), Long.valueOf(requestDTO.getServiceId()));
 
         if (exists) {
@@ -57,48 +70,49 @@ public class ReservationServiceService {
         }
 
         // Buscar Reservation
-        Reservation reservation = IReservationRepository.findByIdAndActiveTrue(Long.valueOf(requestDTO.getReservationId()))
+        Reservation reservation = reservationRepository.findByIdAndActiveTrue(Long.valueOf(requestDTO.getReservationId()))
                 .orElseThrow(() -> {
                     log.error("Reservation con ID {} no encontrada", requestDTO.getReservationId());
                     return new ResourceNotFoundException("Reservation", Long.valueOf(requestDTO.getReservationId()));
-                });
+                }).getReservation();
 
         // Buscar Service
-//        Service service = serviceRepository.findByIdAndActiveTrue(requestDTO.getServiceId())
-//                .orElseThrow(() -> {
-//                    log.error("Service con ID {} no encontrado", requestDTO.getServiceId());
-//                    return new ResourceNotFoundException("Service", requestDTO.getServiceId());
-//                });
+        Service service = serviceRepository.findByIdAndActiveTrue(Long.valueOf(requestDTO.getServiceId()))
+                .orElseThrow(() -> {
+                    log.error("Service con ID {} no encontrado", requestDTO.getServiceId());
+                    return new ResourceNotFoundException("Service", Long.valueOf(requestDTO.getServiceId()));
+                });
 
         // Validar que el servicio pertenezca al carer de la reservación
-        //validateServiceBelongsToCarer(service, reservation);
+        validateServiceBelongsToCarer(service, reservation);
 
         // Crear entity
         ReservationService reservationService = reservationServiceMapper.toEntity(requestDTO);
+        reservationServiceMapper.setRelations(reservationService, reservation, service);
         reservationService.setActive(true);
 
         // Guardar
-        ReservationService saved = IReservationServiceRepository.save(reservationService);
+        ReservationService saved = reservationServiceRepository.save(reservationService);
         log.info("ReservationService creado exitosamente con ID: {}", saved.getId());
 
-        return reservationServiceMapper.toResponseDTO(saved);
+        return reservationServiceMapper.toDto(saved);
     }
 
     /**
      * Obtiene un ReservationService por ID
      */
     @Transactional(readOnly = true)
-    public ReservationServiceResponseDTO findById(Long id) {
+    public ReservationServiceResponseDTO getById(Long id) {
         log.info("Buscando ReservationService por ID: {}", id);
 
-        ReservationService reservationService = IReservationServiceRepository.findByIdAndActiveTrue(id)
+        ReservationService reservationService = reservationServiceRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> {
                     log.error("ReservationService con ID {} no encontrado", id);
                     return new ResourceNotFoundException("ReservationService", id);
                 });
 
         log.debug("ReservationService encontrado: ID={}", reservationService.getId());
-        return reservationServiceMapper.toResponseDTO(reservationService);
+        return reservationServiceMapper.toDto(reservationService);
     }
 
     /**
@@ -109,12 +123,12 @@ public class ReservationServiceService {
         log.info("Obteniendo todos los ReservationServices - Página: {}, Tamaño: {}",
                 pageable.getPageNumber(), pageable.getPageSize());
 
-        Page<ReservationService> page = IReservationServiceRepository.findByActiveTrue(pageable);
+        Page<ReservationService> page = reservationServiceRepository.findByActiveTrue(pageable);
 
         log.info("Se encontraron {} ReservationServices en la página {}",
                 page.getNumberOfElements(), page.getNumber());
 
-        return page.map(reservationServiceMapper::toResponseDTO);
+        return page.map(reservationServiceMapper::toDto);
     }
 
     /**
@@ -127,13 +141,13 @@ public class ReservationServiceService {
         log.info("Buscando ReservationServices con filtros - ReservationId: {}, ServiceId: {}",
                 reservationId, serviceId);
 
-        Page<ReservationService> page = IReservationServiceRepository.findByFilters(
+        Page<ReservationService> page = reservationServiceRepository.findByFilters(
                 reservationId, serviceId, pageable);
 
         log.info("Se encontraron {} ReservationServices con los filtros aplicados",
                 page.getTotalElements());
 
-        return page.map(reservationServiceMapper::toResponseDTO);
+        return page.map(reservationServiceMapper::toDto);
     }
 
     /**
@@ -144,17 +158,17 @@ public class ReservationServiceService {
         log.info("Obteniendo servicios de la Reservation ID: {}", reservationId);
 
         // Verificar que la reservación exista
-        IReservationRepository.findByIdAndActiveTrue(reservationId)
+        reservationRepository.findByIdAndActiveTrue(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation", reservationId));
 
-        List<ReservationService> services = IReservationServiceRepository
+        List<ReservationService> services = reservationServiceRepository
                 .findByReservationIdAndActiveTrue(reservationId);
 
         log.info("Se encontraron {} servicios para la Reservation ID: {}",
                 services.size(), reservationId);
 
         return services.stream()
-                .map(reservationServiceMapper::toResponseDTO)
+                .map(reservationServiceMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -166,17 +180,17 @@ public class ReservationServiceService {
         log.info("Obteniendo reservaciones del Service ID: {}", serviceId);
 
         // Verificar que el servicio exista
-//        serviceRepository.findByIdAndActiveTrue(serviceId)
-//                .orElseThrow(() -> new ResourceNotFoundException("Service", serviceId));
+        serviceRepository.findByIdAndActiveTrue(serviceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Service", serviceId));
 
-        List<ReservationService> reservations = IReservationServiceRepository
+        List<ReservationService> reservations = reservationServiceRepository
                 .findByServiceIdAndActiveTrue(serviceId);
 
         log.info("Se encontraron {} reservaciones para el Service ID: {}",
                 reservations.size(), serviceId);
 
         return reservations.stream()
-                .map(reservationServiceMapper::toResponseDTO)
+                .map(reservationServiceMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -187,7 +201,7 @@ public class ReservationServiceService {
     public void delete(Long id) {
         log.info("Eliminando (borrado lógico) ReservationService ID: {}", id);
 
-        ReservationService reservationService = IReservationServiceRepository.findByIdAndActiveTrue(id)
+        ReservationService reservationService = reservationServiceRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> {
                     log.error("ReservationService con ID {} no encontrado para eliminar", id);
                     return new ResourceNotFoundException("ReservationService", id);
@@ -195,7 +209,7 @@ public class ReservationServiceService {
 
         // Borrado lógico
         reservationService.setActive(false);
-        IReservationServiceRepository.save(reservationService);
+        reservationServiceRepository.save(reservationService);
 
         log.info("ReservationService ID: {} eliminado (borrado lógico) exitosamente", id);
     }
@@ -207,12 +221,12 @@ public class ReservationServiceService {
     public void deleteAllByReservationId(Long reservationId) {
         log.info("Eliminando todos los servicios de la Reservation ID: {}", reservationId);
 
-        List<ReservationService> services = IReservationServiceRepository
+        List<ReservationService> services = reservationServiceRepository
                 .findByReservationIdAndActiveTrue(reservationId);
 
         services.forEach(rs -> {
             rs.setActive(false);
-            IReservationServiceRepository.save(rs);
+            reservationServiceRepository.save(rs);
         });
 
         log.info("{} servicios eliminados de la Reservation ID: {}", services.size(), reservationId);

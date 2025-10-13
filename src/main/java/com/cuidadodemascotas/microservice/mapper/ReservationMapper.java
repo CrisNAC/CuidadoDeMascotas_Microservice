@@ -27,10 +27,6 @@ import java.time.OffsetDateTime;
 @RequiredArgsConstructor
 public class ReservationMapper implements IBaseMapper<Reservation, ReservationRequestDTO, ReservationResponseDTO> {
 
-    private IOwnerRepository ownerRepository;
-    private ICarerRepository carerRepository;
-    private IServiceRepository serviceRepository;
-
     /**
      * Convierte Request DTO a Entity (para creación)
      * Solo mapea los campos básicos, las relaciones se setean en el servicio
