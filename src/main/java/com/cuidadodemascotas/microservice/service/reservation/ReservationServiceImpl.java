@@ -229,7 +229,7 @@ public class ReservationServiceImpl
         if (dto.getServiceDate() == null) {
             throw new BusinessValidationException("La fecha del servicio es obligatoria");
         }
-        if (dto.getServiceDate().isBefore(OffsetDateTime.from(LocalDateTime.now()))) {
+        if (dto.getServiceDate().isBefore(OffsetDateTime.now())) {
             throw new BusinessValidationException("La fecha del servicio no puede ser en el pasado");
         }
         if (dto.getReservationState() == null) {

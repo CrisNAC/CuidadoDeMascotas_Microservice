@@ -10,6 +10,7 @@ import org.example.cuidadodemascota.commons.entities.service.Service;
 import org.springframework.stereotype.Component;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 /**
  * Mapper manual para conversión entre ReservationService Entity y DTOs
@@ -55,8 +56,16 @@ public class ReservationServiceMapper implements IBaseMapper<ReservationService,
 
         ReservationServiceResponseDTO dto = new ReservationServiceResponseDTO();
         dto.setId(entity.getId());
-        dto.setCreatedAt(OffsetDateTime.from(entity.getCreatedAt()));
-        dto.setUpdatedAt(OffsetDateTime.from(entity.getUpdatedAt()));
+//        dto.setCreatedAt(OffsetDateTime.from(entity.getCreatedAt()));
+//        dto.setUpdatedAt(OffsetDateTime.from(entity.getUpdatedAt()));
+        dto.setCreatedAt(entity.getCreatedAt() != null
+                ? entity.getCreatedAt().atOffset(ZoneOffset.of("-03:00"))
+                : null);
+
+        dto.setUpdatedAt(entity.getUpdatedAt() != null
+                ? entity.getUpdatedAt().atOffset(ZoneOffset.of("-03:00"))
+                : null);
+
         dto.setActive(entity.getActive());
 
         // Mapeo de relaciones - Solo IDs

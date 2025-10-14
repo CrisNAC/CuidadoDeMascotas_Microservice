@@ -1,8 +1,5 @@
 package com.cuidadodemascotas.microservice.mapper;
 
-import com.cuidadodemascotas.microservice.repository.ICarerRepository;
-import com.cuidadodemascotas.microservice.repository.IOwnerRepository;
-import com.cuidadodemascotas.microservice.repository.IServiceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.cuidadodemascota.commons.dto.ReservationRequestDTO;
@@ -14,6 +11,7 @@ import org.example.cuidadodemascota.commons.entities.user.Owner;
 import org.springframework.stereotype.Component;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 /**
  * Mapper manual para conversión entre Reservation Entity y DTOs
@@ -85,15 +83,27 @@ public class ReservationMapper implements IBaseMapper<Reservation, ReservationRe
 
         ReservationResponseDTO dto = new ReservationResponseDTO();
         dto.setId(entity.getId());
-        dto.setServiceDate(OffsetDateTime.from(entity.getServiceDate()));
+
+        //dto.setServiceDate(OffsetDateTime.from(entity.getServiceDate()));
+        dto.setServiceDate(entity.getServiceDate() != null
+                ? entity.getServiceDate().atOffset(ZoneOffset.of("-03:00"))
+                : null);
 
         // Convertir enum de Entity a DTO
         if (entity.getState() != null) {
             dto.setReservationState(convertToDtoEnum(entity.getState()));
         }
 
-        dto.setCreatedAt(OffsetDateTime.from(entity.getCreatedAt()));
-        dto.setUpdatedAt(OffsetDateTime.from(entity.getUpdatedAt()));
+//        dto.setCreatedAt(OffsetDateTime.from(entity.getCreatedAt()));
+//        dto.setUpdatedAt(OffsetDateTime.from(entity.getUpdatedAt()));
+        dto.setCreatedAt(entity.getCreatedAt() != null
+                ? entity.getCreatedAt().atOffset(ZoneOffset.of("-03:00"))
+                : null);
+
+        dto.setUpdatedAt(entity.getUpdatedAt() != null
+                ? entity.getUpdatedAt().atOffset(ZoneOffset.of("-03:00"))
+                : null);
+
         dto.setActive(entity.getActive());
 
         // Mapeo de relaciones - Solo IDs para evitar lazy loading exceptions

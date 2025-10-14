@@ -4,6 +4,7 @@ import com.cuidadodemascotas.microservice.exception.BusinessValidationException;
 import com.cuidadodemascotas.microservice.exception.ResourceConflictException;
 import com.cuidadodemascotas.microservice.exception.ResourceNotFoundException;
 import com.cuidadodemascotas.microservice.mapper.ReservationServiceMapper;
+import com.cuidadodemascotas.microservice.repository.IReservationRepository;
 import com.cuidadodemascotas.microservice.repository.IReservationServiceRepository;
 import com.cuidadodemascotas.microservice.repository.IServiceRepository;
 import com.cuidadodemascotas.microservice.service.base.BaseServiceImpl;
@@ -33,8 +34,8 @@ public class ReservationServiceServiceImpl
         extends BaseServiceImpl<ReservationServiceRequestDTO, ReservationServiceResponseDTO, ReservationService, ReservationServiceResult>
         implements IReservationServiceService {
 
+    private final IReservationRepository reservationRepository;
     private final IReservationServiceRepository reservationServiceRepository;
-    private final IReservationServiceRepository reservationRepository;
     private final IServiceRepository serviceRepository;
     private final ReservationServiceMapper reservationServiceMapper;
 
@@ -74,7 +75,7 @@ public class ReservationServiceServiceImpl
                 .orElseThrow(() -> {
                     log.error("Reservation con ID {} no encontrada", requestDTO.getReservationId());
                     return new ResourceNotFoundException("Reservation", Long.valueOf(requestDTO.getReservationId()));
-                }).getReservation();
+                });
 
         // Buscar Service
         Service service = serviceRepository.findByIdAndActiveTrue(Long.valueOf(requestDTO.getServiceId()))

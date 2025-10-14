@@ -40,8 +40,8 @@ public interface IReservationRepository extends JpaRepository<Reservation, Long>
             AND (:ownerId IS NULL OR r.owner.id = :ownerId)
             AND (:carerId IS NULL OR r.carer.id = :carerId)
             AND (:state IS NULL OR r.state = :state)
-            AND (:startDate IS NULL OR r.serviceDate >= :startDate)
-            AND (:endDate IS NULL OR r.serviceDate <= :endDate)
+            AND (CAST(:startDate AS timestamp) IS NULL OR r.serviceDate >= :startDate)
+            AND (CAST(:endDate AS timestamp) IS NULL OR r.serviceDate <= :endDate)
             ORDER BY r.serviceDate DESC
             """)
     Page<Reservation> findByFilters(
