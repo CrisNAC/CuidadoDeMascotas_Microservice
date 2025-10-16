@@ -56,8 +56,6 @@ public class ReservationServiceMapper implements IBaseMapper<ReservationService,
 
         ReservationServiceResponseDTO dto = new ReservationServiceResponseDTO();
         dto.setId(entity.getId());
-//        dto.setCreatedAt(OffsetDateTime.from(entity.getCreatedAt()));
-//        dto.setUpdatedAt(OffsetDateTime.from(entity.getUpdatedAt()));
         dto.setCreatedAt(entity.getCreatedAt() != null
                 ? entity.getCreatedAt().atOffset(ZoneOffset.of("-03:00"))
                 : null);

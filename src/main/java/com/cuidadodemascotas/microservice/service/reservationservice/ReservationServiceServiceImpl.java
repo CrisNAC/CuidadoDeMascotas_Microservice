@@ -196,6 +196,40 @@ public class ReservationServiceServiceImpl
     }
 
     /**
+     * Actualiza una relación Reservation-Service existente
+     */
+    @Transactional
+    public ReservationServiceResponseDTO update(Long id, ReservationServiceRequestDTO requestDTO) {
+        log.info("Actualizando ReservationService con ID: {}", id);
+
+        // Buscar la entidad existente
+        ReservationService entity = reservationServiceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("ReservationService no encontrado con ID: " + id));
+
+        // Actualizar la relación con Reservation (si viene en el DTO)
+        if (requestDTO.getReservationId() != null) {
+            Reservation reservation = reservationRepository.findById(Long.valueOf(requestDTO.getReservationId()))
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Reservación no encontrada con ID: " + requestDTO.getReservationId()));
+            entity.setReservation(reservation);
+        }
+
+        // Actualizar la relación con Service (si viene en el DTO)
+        if (requestDTO.getServiceId() != null) {
+            Service service = serviceRepository.findById(Long.valueOf(requestDTO.getServiceId()))
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Servicio no encontrado con ID: " + requestDTO.getServiceId()));
+            entity.setService(service);
+        }
+
+        // Guardar los cambios
+        ReservationService updated = reservationServiceRepository.save(entity);
+
+        log.info("ReservationService actualizado exitosamente con ID: {}", updated.getId());
+        return reservationServiceMapper.toDto(updated);
+    }
+
+    /**
      * Borrado lógico de una relación Reservation-Service
      */
     @Transactional

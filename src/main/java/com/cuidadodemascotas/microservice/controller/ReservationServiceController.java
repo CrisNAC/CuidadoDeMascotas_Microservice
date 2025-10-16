@@ -158,6 +158,30 @@ public class ReservationServiceController {
         return ResponseEntity.ok(response);
     }
 
+    // ===== UPDATE (SIMPLE) =====
+    @Operation(summary = "Actualizar relación Reservation-Service",
+            description = "Modifica una relación existente entre una reservación y un servicio")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Relación actualizada exitosamente",
+                    content = @Content(schema = @Schema(implementation = ReservationServiceResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "404", description = "Relación no encontrada")
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<ReservationServiceResponseDTO> update(
+            @Parameter(description = "ID de la relación Reservation-Service") @PathVariable Long id,
+            @RequestBody ReservationServiceRequestDTO requestDTO) {
+
+        log.info("PUT /reservation-services/{} - Actualizar relación Reservation-Service", id);
+        log.debug("Request body: {}", requestDTO);
+
+        ReservationServiceResponseDTO response = reservationServiceServiceImpl.update(id, requestDTO);
+
+        log.info("Relación Reservation-Service actualizada exitosamente con ID: {}", id);
+        return ResponseEntity.ok(response);
+    }
+
+
     // ===== DELETE (LOGICAL) =====
     @Operation(summary = "Eliminar relación (borrado lógico)",
             description = "Realiza un borrado lógico de la relación Reservation-Service (marca como inactiva)")
@@ -180,7 +204,10 @@ public class ReservationServiceController {
     // ===== DELETE ALL BY RESERVATION =====
     @Operation(summary = "Eliminar todas las relaciones de una reservación",
             description = "Elimina todas las relaciones Reservation-Service asociadas a una reservación específica")
-    @DeleteMapping("/by-reservation/{reservationId}")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Eliminación exitosa"),
+            @ApiResponse(responseCode = "404", description = "Relación no encontrada")
+    })@DeleteMapping("/by-reservation/{reservationId}")
     public ResponseEntity<Void> deleteAllByReservationId(@PathVariable Long reservationId) {
 
         log.info("DELETE /reservation-services/by-reservation/{} - Eliminar todas las relaciones", reservationId);

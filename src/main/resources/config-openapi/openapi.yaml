@@ -275,7 +275,38 @@ paths:
           description: Servicio de reserva no encontrado
         '500':
           description: Error interno del servidor
-
+    put:
+      tags:
+        - ReservationService
+      summary: Actualizar una relación Reservation-Service existente
+      operationId: updateReservationService
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la relación a actualizar
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationServiceRequestDTO'
+      responses:
+        '200':
+          description: Relación actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationServiceResponseDTO'
+        '400':
+          description: Datos inválidos
+        '404':
+          description: Relación no encontrada
+        '500':
+          description: Error interno del servidor
     delete:
       tags:
         - ReservationService
@@ -297,6 +328,75 @@ paths:
         '500':
           description: Error interno del servidor
 
+  /reservation-services/by-reservation/{reservationId}:
+    get:
+      tags:
+        - ReservationService
+      summary: Obtener los servicios de una reservación
+      operationId: getReservationServicesByReservationId
+      parameters:
+        - name: reservationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Servicios encontrados correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResultListReservationServiceResponseDTO'
+        '404':
+          description: No se encontraron servicios para la reserva
+        '500':
+          description: Error interno del servidor
+
+    delete:
+      tags:
+        - ReservationService
+      summary: Eliminar todas las relaciones de una reservación
+      operationId: deleteAllReservationServicesByReservationId
+      parameters:
+        - name: reservationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Relaciones eliminadas exitosamente
+        '404':
+          description: No se encontraron relaciones
+        '500':
+          description: Error interno del servidor
+
+  /reservation-services/by-service/{serviceId}:
+    get:
+      tags:
+        - ReservationService
+      summary: Obtener todas las reservaciones asociadas a un servicio
+      operationId: getReservationServicesByServiceId
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Reservaciones encontradas correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResultListReservationServiceResponseDTO'
+        '404':
+          description: No se encontraron reservaciones para el servicio
+        '500':
+          description: Error interno del servidor
 
 components:
   schemas:
@@ -442,3 +542,17 @@ components:
           type: integer
         number:
           type: integer
+
+    BaseResultListReservationServiceResponseDTO:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Servicios de reserva obtenidos correctamente.
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservationServiceResponseDTO'
