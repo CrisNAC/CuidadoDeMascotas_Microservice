@@ -31,8 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-# Credenciales o configs sensibles
-src/main/resources/application.properties
-src/main/resources/application.yml
-src/main/resources/config-openapi/openapi.yaml

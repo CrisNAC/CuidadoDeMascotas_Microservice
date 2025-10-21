@@ -52,24 +52,6 @@ public class ReservationMapper implements IBaseMapper<Reservation, ReservationRe
     }
 
     /**
-     * Actualiza una entity existente con los datos del Request DTO
-     * IMPORTANTE: No actualiza las relaciones (owner, carer), solo datos básicos
-     */
-    public void updateEntityFromDto(Reservation entity, ReservationRequestDTO dto) {
-        log.debug("Actualizando Reservation entity ID={} desde DTO", entity.getId());
-
-        if (dto.getServiceDate() != null) {
-            entity.setServiceDate(dto.getServiceDate().toLocalDateTime());
-        }
-        if (dto.getReservationState() != null) {
-            entity.setState(convertToEntityEnum(dto.getReservationState()));
-        }
-
-        log.debug("Entity actualizada: serviceDate={}, state={}",
-                entity.getServiceDate(), entity.getState());
-    }
-
-    /**
      * Convierte Entity a Response DTO
      * IMPORTANTE: Solo mapea IDs de las relaciones para evitar lazy loading
      */
@@ -115,6 +97,24 @@ public class ReservationMapper implements IBaseMapper<Reservation, ReservationRe
                 dto.getId(), dto.getOwnerId(), dto.getCarerId());
 
         return dto;
+    }
+
+    /**
+     * Actualiza una entity existente con los datos del Request DTO
+     * IMPORTANTE: No actualiza las relaciones (owner, carer), solo datos básicos
+     */
+    public void updateEntityFromDto(Reservation entity, ReservationRequestDTO dto) {
+        log.debug("Actualizando Reservation entity ID={} desde DTO", entity.getId());
+
+        if (dto.getServiceDate() != null) {
+            entity.setServiceDate(dto.getServiceDate().toLocalDateTime());
+        }
+        if (dto.getReservationState() != null) {
+            entity.setState(convertToEntityEnum(dto.getReservationState()));
+        }
+
+        log.debug("Entity actualizada: serviceDate={}, state={}",
+                entity.getServiceDate(), entity.getState());
     }
 
     /**

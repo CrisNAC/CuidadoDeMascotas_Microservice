@@ -37,6 +37,7 @@ public class ReservationController {
 
     private final ReservationServiceImpl reservationServiceImpl;
 
+    // ===== CREATE =====
     @Operation(summary = "Crear una nueva reservación",
             description = "Crea una nueva reservación validando owner, carer y disponibilidad")
     @ApiResponses(value = {
@@ -59,6 +60,7 @@ public class ReservationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    // ===== UPDATE =====
     @Operation(summary = "Actualizar una reservación",
             description = "Actualiza una reservación existente por su ID")
     @ApiResponses(value = {
@@ -81,6 +83,7 @@ public class ReservationController {
         return ResponseEntity.ok(response);
     }
 
+    // ===== GetById =====
     @Operation(summary = "Obtener reservación por ID",
             description = "Obtiene una reservación específica por su ID")
     @ApiResponses(value = {
@@ -100,6 +103,7 @@ public class ReservationController {
         return ResponseEntity.ok(response);
     }
 
+    // ===== GET ALL  =====
     @Operation(summary = "Listar todas las reservaciones",
             description = "Obtiene todas las reservaciones activas con paginación")
     @ApiResponses(value = {
@@ -129,6 +133,7 @@ public class ReservationController {
         return ResponseEntity.ok(response);
     }
 
+    // ===== GET BY FILTERS =====
     @Operation(summary = "Buscar reservaciones con filtros",
             description = "Busca reservaciones aplicando filtros opcionales con paginación")
     @ApiResponses(value = {
@@ -166,6 +171,7 @@ public class ReservationController {
         return ResponseEntity.ok(response);
     }
 
+    // ===== DELETE =====
     @Operation(summary = "Eliminar reservación (borrado lógico)",
             description = "Realiza un borrado lógico de la reservación (marca como inactiva)")
     @ApiResponses(value = {
