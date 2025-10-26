@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,8 +49,24 @@ public class ReservationServiceServiceImpl
     }
 
     /**
+     * Obtiene todos los ReservationServices activos con paginación
+     */
+    @Transactional(readOnly = true)
+    public Page<ReservationServiceResponseDTO> findAll(Pageable pageable) {
+        log.info("Obteniendo todos los ReservationServices - Página: {}, Tamaño: {}",
+                pageable.getPageNumber(), pageable.getPageSize());
+
+        Page<ReservationService> page = reservationServiceRepository.findByActiveTrue(pageable);
+
+        log.info("Se encontraron {} ReservationServices en la página {}",
+                page.getNumberOfElements(), page.getNumber());
+
+        return page.map(reservationServiceMapper::toDto);
+    }
+
+    /**
      * Crea una nueva relación Reservation-Service
-     * Valida que no exista duplicidad
+     * Válida que no exista duplicidad
      */
     @Transactional
     public ReservationServiceResponseDTO save(ReservationServiceRequestDTO requestDTO) {
@@ -61,7 +78,7 @@ public class ReservationServiceServiceImpl
 
         // Verificar que no exista ya la relación
         boolean exists = reservationServiceRepository.existsByReservationIdAndServiceIdAndActiveTrue(
-                Long.valueOf(requestDTO.getReservationId()), Long.valueOf(requestDTO.getServiceId()));
+                requestDTO.getReservationId(), requestDTO.getServiceId());
 
         if (exists) {
             log.error("Ya existe una relación activa entre Reservation {} y Service {}",
@@ -71,17 +88,17 @@ public class ReservationServiceServiceImpl
         }
 
         // Buscar Reservation
-        Reservation reservation = reservationRepository.findByIdAndActiveTrue(Long.valueOf(requestDTO.getReservationId()))
+        Reservation reservation = reservationRepository.findByIdAndActiveTrue(requestDTO.getReservationId())
                 .orElseThrow(() -> {
                     log.error("Reservation con ID {} no encontrada", requestDTO.getReservationId());
-                    return new ResourceNotFoundException("Reservation", Long.valueOf(requestDTO.getReservationId()));
+                    return new ResourceNotFoundException("Reservation", requestDTO.getReservationId());
                 });
 
         // Buscar Service
-        Service service = serviceRepository.findByIdAndActiveTrue(Long.valueOf(requestDTO.getServiceId()))
+        Service service = serviceRepository.findByIdAndActiveTrue(requestDTO.getServiceId())
                 .orElseThrow(() -> {
                     log.error("Service con ID {} no encontrado", requestDTO.getServiceId());
-                    return new ResourceNotFoundException("Service", Long.valueOf(requestDTO.getServiceId()));
+                    return new ResourceNotFoundException("Service", requestDTO.getServiceId());
                 });
 
         // Validar que el servicio pertenezca al carer de la reservación
@@ -91,6 +108,8 @@ public class ReservationServiceServiceImpl
         ReservationService reservationService = reservationServiceMapper.toEntity(requestDTO);
         reservationServiceMapper.setRelations(reservationService, reservation, service);
         reservationService.setActive(true);
+        reservationService.setCreatedAt(LocalDateTime.now());
+        reservationService.setUpdatedAt(LocalDateTime.now());
 
         // Guardar
         ReservationService saved = reservationServiceRepository.save(reservationService);
@@ -117,41 +136,6 @@ public class ReservationServiceServiceImpl
     }
 
     /**
-     * Obtiene todos los ReservationServices activos con paginación
-     */
-    @Transactional(readOnly = true)
-    public Page<ReservationServiceResponseDTO> findAll(Pageable pageable) {
-        log.info("Obteniendo todos los ReservationServices - Página: {}, Tamaño: {}",
-                pageable.getPageNumber(), pageable.getPageSize());
-
-        Page<ReservationService> page = reservationServiceRepository.findByActiveTrue(pageable);
-
-        log.info("Se encontraron {} ReservationServices en la página {}",
-                page.getNumberOfElements(), page.getNumber());
-
-        return page.map(reservationServiceMapper::toDto);
-    }
-
-    /**
-     * Busca ReservationServices con filtros y paginación
-     */
-    @Transactional(readOnly = true)
-    public Page<ReservationServiceResponseDTO> findByFilters(
-            Long reservationId, Long serviceId, Pageable pageable) {
-
-        log.info("Buscando ReservationServices con filtros - ReservationId: {}, ServiceId: {}",
-                reservationId, serviceId);
-
-        Page<ReservationService> page = reservationServiceRepository.findByFilters(
-                reservationId, serviceId, pageable);
-
-        log.info("Se encontraron {} ReservationServices con los filtros aplicados",
-                page.getTotalElements());
-
-        return page.map(reservationServiceMapper::toDto);
-    }
-
-    /**
      * Obtiene todos los servicios de una reservación específica
      */
     @Transactional(readOnly = true)
@@ -171,6 +155,64 @@ public class ReservationServiceServiceImpl
         return services.stream()
                 .map(reservationServiceMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Actualiza una relación Reservation-Service existente
+     */
+    @Transactional
+    public ReservationServiceResponseDTO update(Long id, ReservationServiceRequestDTO requestDTO) {
+        log.info("Actualizando ReservationService con ID: {}", id);
+
+        // Buscar la entidad existente
+        ReservationService entity = reservationServiceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("ReservationService no encontrado con ID: " + id));
+
+        // Actualizar la relación con Reservation (si viene en el DTO)
+        if (requestDTO.getReservationId() != null) {
+            Reservation reservation = reservationRepository.findById(requestDTO.getReservationId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Reservación no encontrada con ID: " + requestDTO.getReservationId()));
+            entity.setReservation(reservation);
+        }
+
+        // Actualizar la relación con Service (si viene en el DTO)
+        if (requestDTO.getServiceId() != null) {
+            Service service = serviceRepository.findById(requestDTO.getServiceId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Servicio no encontrado con ID: " + requestDTO.getServiceId()));
+            entity.setService(service);
+        }
+
+        // Actualizar la fecha de actualización
+        entity.setUpdatedAt(LocalDateTime.now());
+        // Guardar los cambios
+        ReservationService updated = reservationServiceRepository.save(entity);
+
+        log.info("ReservationService actualizado exitosamente con ID: {}", updated.getId());
+        return reservationServiceMapper.toDto(updated);
+    }
+
+    /**
+     * Borrado lógico de una relación Reservation-Service
+     */
+    @Transactional
+    public void delete(Long id) {
+        log.info("Eliminando (borrado lógico) ReservationService ID: {}", id);
+
+        ReservationService reservationService = reservationServiceRepository.findByIdAndActiveTrue(id)
+                .orElseThrow(() -> {
+                    log.error("ReservationService con ID {} no encontrado para eliminar", id);
+                    return new ResourceNotFoundException("ReservationService", id);
+                });
+
+        // Borrado lógico
+        reservationService.setActive(false);
+        // Actualizar la fecha de actualización
+        reservationService.setUpdatedAt(LocalDateTime.now());
+        reservationServiceRepository.save(reservationService);
+
+        log.info("ReservationService ID: {} eliminado (borrado lógico) exitosamente", id);
     }
 
     /**
@@ -196,60 +238,6 @@ public class ReservationServiceServiceImpl
     }
 
     /**
-     * Actualiza una relación Reservation-Service existente
-     */
-    @Transactional
-    public ReservationServiceResponseDTO update(Long id, ReservationServiceRequestDTO requestDTO) {
-        log.info("Actualizando ReservationService con ID: {}", id);
-
-        // Buscar la entidad existente
-        ReservationService entity = reservationServiceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("ReservationService no encontrado con ID: " + id));
-
-        // Actualizar la relación con Reservation (si viene en el DTO)
-        if (requestDTO.getReservationId() != null) {
-            Reservation reservation = reservationRepository.findById(Long.valueOf(requestDTO.getReservationId()))
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Reservación no encontrada con ID: " + requestDTO.getReservationId()));
-            entity.setReservation(reservation);
-        }
-
-        // Actualizar la relación con Service (si viene en el DTO)
-        if (requestDTO.getServiceId() != null) {
-            Service service = serviceRepository.findById(Long.valueOf(requestDTO.getServiceId()))
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Servicio no encontrado con ID: " + requestDTO.getServiceId()));
-            entity.setService(service);
-        }
-
-        // Guardar los cambios
-        ReservationService updated = reservationServiceRepository.save(entity);
-
-        log.info("ReservationService actualizado exitosamente con ID: {}", updated.getId());
-        return reservationServiceMapper.toDto(updated);
-    }
-
-    /**
-     * Borrado lógico de una relación Reservation-Service
-     */
-    @Transactional
-    public void delete(Long id) {
-        log.info("Eliminando (borrado lógico) ReservationService ID: {}", id);
-
-        ReservationService reservationService = reservationServiceRepository.findByIdAndActiveTrue(id)
-                .orElseThrow(() -> {
-                    log.error("ReservationService con ID {} no encontrado para eliminar", id);
-                    return new ResourceNotFoundException("ReservationService", id);
-                });
-
-        // Borrado lógico
-        reservationService.setActive(false);
-        reservationServiceRepository.save(reservationService);
-
-        log.info("ReservationService ID: {} eliminado (borrado lógico) exitosamente", id);
-    }
-
-    /**
      * Elimina todos los servicios de una reservación
      */
     @Transactional
@@ -261,10 +249,30 @@ public class ReservationServiceServiceImpl
 
         services.forEach(rs -> {
             rs.setActive(false);
+            rs.setUpdatedAt(LocalDateTime.now());
             reservationServiceRepository.save(rs);
         });
 
         log.info("{} servicios eliminados de la Reservation ID: {}", services.size(), reservationId);
+    }
+
+    /**
+     * Busca ReservationServices con filtros y paginación
+     */
+    @Transactional(readOnly = true)
+    public Page<ReservationServiceResponseDTO> findByFilters(
+            Long reservationId, Long serviceId, Pageable pageable) {
+
+        log.info("Buscando ReservationServices con filtros - ReservationId: {}, ServiceId: {}",
+                reservationId, serviceId);
+
+        Page<ReservationService> page = reservationServiceRepository.findByFilters(
+                reservationId, serviceId, pageable);
+
+        log.info("Se encontraron {} ReservationServices con los filtros aplicados",
+                page.getTotalElements());
+
+        return page.map(reservationServiceMapper::toDto);
     }
 
     // ========== MÉTODOS DE VALIDACIÓN ==========

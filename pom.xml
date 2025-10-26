@@ -73,13 +73,13 @@
             <groupId>org.example</groupId>
             <artifactId>CuidadoDeMascota</artifactId>
             <classifier>dtos</classifier>
-            <version>3.0.0</version>
+            <version>3.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.example</groupId>
             <artifactId>CuidadoDeMascota</artifactId>
             <classifier>entities</classifier>
-            <version>3.0.0</version>
+            <version>3.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.modelmapper</groupId>

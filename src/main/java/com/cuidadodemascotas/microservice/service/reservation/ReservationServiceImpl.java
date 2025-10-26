@@ -3,9 +3,8 @@ package com.cuidadodemascotas.microservice.service.reservation;
 import com.cuidadodemascotas.microservice.exception.BusinessValidationException;
 import com.cuidadodemascotas.microservice.exception.ResourceNotFoundException;
 import com.cuidadodemascotas.microservice.mapper.ReservationMapper;
-import com.cuidadodemascotas.microservice.repository.ICarerRepository;
-import com.cuidadodemascotas.microservice.repository.IOwnerRepository;
 import com.cuidadodemascotas.microservice.repository.IReservationRepository;
+import com.cuidadodemascotas.microservice.repository.IUserRepository;
 import com.cuidadodemascotas.microservice.service.base.BaseServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,8 +13,7 @@ import org.example.cuidadodemascota.commons.dto.ReservationResponseDTO;
 import org.example.cuidadodemascota.commons.dto.ReservationResult;
 import org.example.cuidadodemascota.commons.entities.enums.ReservationStateEnum;
 import org.example.cuidadodemascota.commons.entities.reservation.Reservation;
-import org.example.cuidadodemascota.commons.entities.user.Carer;
-import org.example.cuidadodemascota.commons.entities.user.Owner;
+import org.example.cuidadodemascota.commons.entities.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,8 +34,8 @@ public class ReservationServiceImpl
         implements IReservationService {
 
     private final IReservationRepository reservationRepository;
-    private final IOwnerRepository ownerRepository;
-    private final ICarerRepository carerRepository;
+    private final IUserRepository ownerRepository;
+    private final IUserRepository carerRepository;
     private final ReservationMapper reservationMapper;
 
     protected ReservationResponseDTO convertEntityToDto(Reservation entity) {
@@ -49,8 +47,24 @@ public class ReservationServiceImpl
     }
 
     /**
+     * Obtiene todas las reservaciones activas con paginación
+     */
+    @Transactional(readOnly = true)
+    public Page<ReservationResponseDTO> findAll(Pageable pageable) {
+        log.info("Obteniendo todas las Reservations - Página: {}, Tamaño: {}",
+                pageable.getPageNumber(), pageable.getPageSize());
+
+        Page<Reservation> page = reservationRepository.findByActiveTrue(pageable);
+
+        log.info("Se encontraron {} Reservations en la página {}",
+                page.getNumberOfElements(), page.getNumber());
+
+        return page.map(reservationMapper::toDto);
+    }
+
+    /**
      * Crea una nueva reservación
-     * Valida que owner y carer existan y estén activos
+     * Válida que owner y carer existan y estén activos
      */
     @Transactional
     public ReservationResponseDTO save(ReservationRequestDTO requestDTO) {
@@ -61,17 +75,17 @@ public class ReservationServiceImpl
         validateReservationRequest(requestDTO);
 
         // Buscar Owner y Carer
-        Owner owner = ownerRepository.findByIdAndActiveTrue(Long.valueOf(requestDTO.getOwnerId()))
+        User owner = ownerRepository.findByIdAndActiveTrue(requestDTO.getOwnerId())
                 .orElseThrow(() -> {
                     log.error("Owner con ID {} no encontrado o inactivo", requestDTO.getOwnerId());
-                    return new ResourceNotFoundException("Owner", Long.valueOf(requestDTO.getOwnerId()));
+                    return new ResourceNotFoundException("Owner", requestDTO.getOwnerId());
                 });
         log.debug("Owner encontrado: ID={}", owner.getId());
 
-        Carer carer = carerRepository.findByIdAndActiveTrue(Long.valueOf(requestDTO.getCarerId()))
+        User carer = carerRepository.findByIdAndActiveTrue(requestDTO.getCarerId())
                 .orElseThrow(() -> {
                     log.error("Carer con ID {} no encontrado o inactivo", requestDTO.getCarerId());
-                    return new ResourceNotFoundException("Carer", Long.valueOf(requestDTO.getCarerId()));
+                    return new ResourceNotFoundException("Carer", requestDTO.getCarerId());
                 });
         log.debug("Carer encontrado: ID={}", carer.getId());
 
@@ -82,12 +96,31 @@ public class ReservationServiceImpl
         Reservation reservation = reservationMapper.toEntity(requestDTO);
         reservationMapper.setRelations(reservation, owner, carer);
         reservation.setActive(true);
+        reservation.setCreatedAt(LocalDateTime.now());
+        reservation.setUpdatedAt(LocalDateTime.now());
 
         // Guardar
         Reservation saved = reservationRepository.save(reservation);
         log.info("Reservation creada exitosamente con ID: {}", saved.getId());
 
         return reservationMapper.toDto(saved);
+    }
+
+    /**
+     * Obtiene una reservación por ID
+     */
+    @Transactional(readOnly = true)
+    public ReservationResponseDTO getById(Long id) {
+        log.info("Buscando Reservation por ID: {}", id);
+
+        Reservation reservation = reservationRepository.findByIdAndActiveTrue(id)
+                .orElseThrow(() -> {
+                    log.error("Reservation con ID {} no encontrada", id);
+                    return new ResourceNotFoundException("Reservation", id);
+                });
+
+        log.debug("Reservation encontrada: ID={}", reservation.getId());
+        return reservationMapper.toDto(reservation);
     }
 
     /**
@@ -109,18 +142,23 @@ public class ReservationServiceImpl
             log.error("No se puede actualizar una reservación FINISHED");
             throw new BusinessValidationException("No se puede actualizar una reservación finalizada");
         }
+        // Validar que no esté pagada
+        if (existing.getState() == ReservationStateEnum.PAID) {
+            log.error("No se puede actualizar una reservación PAID");
+            throw new BusinessValidationException("No se puede actualizar una reservación pagada");
+        }
 
         // Actualizar relaciones si cambiaron
-        if (requestDTO.getOwnerId() != null && !requestDTO.getOwnerId().equals(existing.getOwner().getId())) {
-            Owner newOwner = ownerRepository.findByIdAndActiveTrue(Long.valueOf(requestDTO.getOwnerId()))
-                    .orElseThrow(() -> new ResourceNotFoundException("Owner", Long.valueOf(requestDTO.getOwnerId())));
+        if (requestDTO.getOwnerId() != null) {
+            User newOwner = ownerRepository.findByIdAndActiveTrue(requestDTO.getOwnerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Owner", requestDTO.getOwnerId()));
             existing.setOwner(newOwner);
             log.debug("Owner actualizado a ID: {}", newOwner.getId());
         }
 
-        if (requestDTO.getCarerId() != null && !requestDTO.getCarerId().equals(existing.getCarer().getId())) {
-            Carer newCarer = carerRepository.findByIdAndActiveTrue(Long.valueOf(requestDTO.getCarerId()))
-                    .orElseThrow(() -> new ResourceNotFoundException("Carer", Long.valueOf(requestDTO.getCarerId())));
+        if (requestDTO.getCarerId() != null) {
+            User newCarer = carerRepository.findByIdAndActiveTrue(requestDTO.getCarerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Carer", requestDTO.getCarerId()));
             validateCarerAvailability(newCarer, requestDTO.getServiceDate().toLocalDateTime());
             existing.setCarer(newCarer);
             log.debug("Carer actualizado a ID: {}", newCarer.getId());
@@ -129,64 +167,14 @@ public class ReservationServiceImpl
         // Actualizar campos básicos
         reservationMapper.updateEntityFromDto(existing, requestDTO);
 
+        // Actualizar timestamp
+        existing.setUpdatedAt(LocalDateTime.now());
+
         // Guardar
         Reservation updated = reservationRepository.save(existing);
         log.info("Reservation ID: {} actualizada exitosamente", id);
 
         return reservationMapper.toDto(updated);
-    }
-
-    /**
-     * Obtiene una reservación por ID
-     */
-    @Transactional(readOnly = true)
-    public ReservationResponseDTO getById(Long id) {
-        log.info("Buscando Reservation por ID: {}", id);
-
-        Reservation reservation = reservationRepository.findByIdAndActiveTrue(id)
-                .orElseThrow(() -> {
-                    log.error("Reservation con ID {} no encontrada", id);
-                    return new ResourceNotFoundException("Reservation", id);
-                });
-
-        log.debug("Reservation encontrada: ID={}", reservation.getId());
-        return reservationMapper.toDto(reservation);
-    }
-
-    /**
-     * Obtiene todas las reservaciones activas con paginación
-     */
-    @Transactional(readOnly = true)
-    public Page<ReservationResponseDTO> findAll(Pageable pageable) {
-        log.info("Obteniendo todas las Reservations - Página: {}, Tamaño: {}",
-                pageable.getPageNumber(), pageable.getPageSize());
-
-        Page<Reservation> page = reservationRepository.findByActiveTrue(pageable);
-
-        log.info("Se encontraron {} Reservations en la página {}",
-                page.getNumberOfElements(), page.getNumber());
-
-        return page.map(reservationMapper::toDto);
-    }
-
-    /**
-     * Busca reservaciones con filtros y paginación
-     */
-    @Transactional(readOnly = true)
-    public Page<ReservationResponseDTO> findByFilters(
-            Long ownerId, Long carerId, ReservationStateEnum state,
-            LocalDateTime startDate, LocalDateTime endDate,
-            Pageable pageable) {
-
-        log.info("Buscando Reservations con filtros - OwnerId: {}, CarerId: {}, State: {}",
-                ownerId, carerId, state);
-
-        Page<Reservation> page = reservationRepository.findByFilters(
-                ownerId, carerId, state, startDate, endDate, pageable);
-
-        log.info("Se encontraron {} Reservations con los filtros aplicados", page.getTotalElements());
-
-        return page.map(reservationMapper::toDto);
     }
 
     /**
@@ -210,9 +198,32 @@ public class ReservationServiceImpl
 
         // Borrado lógico
         reservation.setActive(false);
+        // Actualizar timestamp
+        reservation.setUpdatedAt(LocalDateTime.now());
+        // Guardar cambios
         reservationRepository.save(reservation);
 
         log.info("Reservation ID: {} eliminada (borrado lógico) exitosamente", id);
+    }
+
+    /**
+     * Busca reservaciones con filtros y paginación
+     */
+    @Transactional(readOnly = true)
+    public Page<ReservationResponseDTO> findByFilters(
+            Long ownerId, Long carerId, ReservationStateEnum state,
+            LocalDateTime startDate, LocalDateTime endDate,
+            Pageable pageable) {
+
+        log.info("Buscando Reservations con filtros - OwnerId: {}, CarerId: {}, State: {}",
+                ownerId, carerId, state);
+
+        Page<Reservation> page = reservationRepository.findByFilters(
+                ownerId, carerId, state, startDate, endDate, pageable);
+
+        log.info("Se encontraron {} Reservations con los filtros aplicados", page.getTotalElements());
+
+        return page.map(reservationMapper::toDto);
     }
 
     // ========== MÉTODOS DE VALIDACIÓN ==========
@@ -239,7 +250,7 @@ public class ReservationServiceImpl
         log.debug("Validaciones pasadas correctamente");
     }
 
-    private void validateCarerAvailability(Carer carer, LocalDateTime serviceDate) {
+    private void validateCarerAvailability(User carer, LocalDateTime serviceDate) {
         log.debug("Validando disponibilidad del Carer ID: {}", carer.getId());
 
         // Verificar si hay conflicto de horario (±2 horas)

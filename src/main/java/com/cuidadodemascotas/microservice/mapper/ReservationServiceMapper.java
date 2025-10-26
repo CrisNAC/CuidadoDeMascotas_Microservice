@@ -68,10 +68,10 @@ public class ReservationServiceMapper implements IBaseMapper<ReservationService,
 
         // Mapeo de relaciones - Solo IDs
         if (entity.getReservation() != null) {
-            dto.setReservationId(Math.toIntExact(entity.getReservation().getId()));
+            dto.setReservationId(entity.getReservation().getId());
         }
         if (entity.getService() != null) {
-            dto.setServiceId(Math.toIntExact(entity.getService().getId()));
+            dto.setServiceId(entity.getService().getId());
         }
 
         log.debug("ResponseDTO creado: id={}, reservationId={}, serviceId={}",

@@ -6,8 +6,7 @@ import org.example.cuidadodemascota.commons.dto.ReservationRequestDTO;
 import org.example.cuidadodemascota.commons.dto.ReservationResponseDTO;
 import org.example.cuidadodemascota.commons.entities.enums.ReservationStateEnum;
 import org.example.cuidadodemascota.commons.entities.reservation.Reservation;
-import org.example.cuidadodemascota.commons.entities.user.Carer;
-import org.example.cuidadodemascota.commons.entities.user.Owner;
+import org.example.cuidadodemascota.commons.entities.user.User;
 import org.springframework.stereotype.Component;
 
 import java.time.OffsetDateTime;
@@ -87,10 +86,10 @@ public class ReservationMapper implements IBaseMapper<Reservation, ReservationRe
 
         // Mapeo de relaciones - Solo IDs para evitar lazy loading exceptions
         if (entity.getOwner() != null) {
-            dto.setOwnerId(Math.toIntExact(entity.getOwner().getId()));
+            dto.setOwnerId(entity.getOwner().getId());
         }
         if (entity.getCarer() != null) {
-            dto.setCarerId(Math.toIntExact(entity.getCarer().getId()));
+            dto.setCarerId(entity.getCarer().getId());
         }
 
         log.debug("ResponseDTO creado: id={}, ownerId={}, carerId={}",
@@ -121,7 +120,7 @@ public class ReservationMapper implements IBaseMapper<Reservation, ReservationRe
      * Configura las relaciones de la entity (Owner y Carer)
      * Se llama desde el servicio después de buscar las entidades relacionadas
      */
-    public void setRelations(Reservation entity, Owner owner, Carer carer) {
+    public void setRelations(Reservation entity, User owner, User carer) {
         log.debug("Configurando relaciones para Reservation");
 
         if (owner != null) {

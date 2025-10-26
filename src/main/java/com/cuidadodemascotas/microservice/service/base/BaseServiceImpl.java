@@ -1,10 +1,6 @@
 package com.cuidadodemascotas.microservice.service.base;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.cuidadodemascota.commons.dto.AbstractDTO;
-import org.example.cuidadodemascota.commons.dto.BaseDTO;
-import org.example.cuidadodemascota.commons.dto.BaseResult;
-import org.example.cuidadodemascota.commons.dto.ReservationResponseDTO;
 
 import java.util.List;
 import java.util.stream.Collectors;
