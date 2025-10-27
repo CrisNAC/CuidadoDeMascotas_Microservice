@@ -457,7 +457,7 @@ components:
           format: date-time
         state:
           type: string
-          enum: [PENDING, CONFIRMED, CANCELLED, COMPLETED]
+          enum: [PENDING, ACCEPTED, REJECTED, FINISHED, PAID]
         reservationServiceIds:
           type: array
           items:
