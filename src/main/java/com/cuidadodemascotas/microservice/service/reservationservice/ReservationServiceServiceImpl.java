@@ -16,9 +16,14 @@ import org.example.cuidadodemascota.commons.dto.ReservationServiceResult;
 import org.example.cuidadodemascota.commons.entities.reservation.Reservation;
 import org.example.cuidadodemascota.commons.entities.reservation.ReservationService;
 import org.example.cuidadodemascota.commons.entities.service.Service;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,6 +44,7 @@ public class ReservationServiceServiceImpl
     private final IReservationServiceRepository reservationServiceRepository;
     private final IServiceRepository serviceRepository;
     private final ReservationServiceMapper reservationServiceMapper;
+    private final CacheManager cacheManager;
 
     protected ReservationServiceResponseDTO convertEntityToDto(ReservationService entity) {
         return reservationServiceMapper.toDto(entity);
@@ -57,11 +63,20 @@ public class ReservationServiceServiceImpl
                 pageable.getPageNumber(), pageable.getPageSize());
 
         Page<ReservationService> page = reservationServiceRepository.findByActiveTrue(pageable);
-
         log.info("Se encontraron {} ReservationServices en la página {}",
                 page.getNumberOfElements(), page.getNumber());
 
-        return page.map(reservationServiceMapper::toDto);
+        Page<ReservationServiceResponseDTO> dtos = page.map(reservationServiceMapper::toDto);
+        // Cache individual de reservas
+        dtos.forEach(rs -> {
+            cacheManager.getCache("reservation_services")
+                    .put("byId_" + rs.getId(), rs);
+            log.info("Detalle con ID: {} cacheada individualmente.", rs.getId());
+        });
+        log.info("Todas los detalles cargadas en memoria y cacheadas individualmente.");
+
+
+        return dtos;
     }
 
     /**
@@ -69,6 +84,7 @@ public class ReservationServiceServiceImpl
      * Válida que no exista duplicidad
      */
     @Transactional
+    @CacheEvict(value = "reservation_services", key = "'byReservation_' + #requestDTO.reservationId")
     public ReservationServiceResponseDTO save(ReservationServiceRequestDTO requestDTO) {
         log.info("Creando ReservationService - ReservationId: {}, ServiceId: {}",
                 requestDTO.getReservationId(), requestDTO.getServiceId());
@@ -122,6 +138,7 @@ public class ReservationServiceServiceImpl
      * Obtiene un ReservationService por ID
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = "reservation_services", key = "'byId_' + #id")
     public ReservationServiceResponseDTO getById(Long id) {
         log.info("Buscando ReservationService por ID: {}", id);
 
@@ -139,6 +156,7 @@ public class ReservationServiceServiceImpl
      * Obtiene todos los servicios de una reservación específica
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = "reservation_services", key = "'byReservation_' + #reservationId")
     public List<ReservationServiceResponseDTO> findByReservationId(Long reservationId) {
         log.info("Obteniendo servicios de la Reservation ID: {}", reservationId);
 
@@ -161,6 +179,14 @@ public class ReservationServiceServiceImpl
      * Actualiza una relación Reservation-Service existente
      */
     @Transactional
+    @Caching(
+            put = {
+                    @CachePut(value = "reservation_services", key = "'byId_' + #id")
+            },
+            evict = {
+                    @CacheEvict(value = "reservation_services", allEntries = true)
+            }
+    )
     public ReservationServiceResponseDTO update(Long id, ReservationServiceRequestDTO requestDTO) {
         log.info("Actualizando ReservationService con ID: {}", id);
 
@@ -197,6 +223,7 @@ public class ReservationServiceServiceImpl
      * Borrado lógico de una relación Reservation-Service
      */
     @Transactional
+    @CacheEvict(value = "reservation_services", key = "'byId_' + #id")
     public void delete(Long id) {
         log.info("Eliminando (borrado lógico) ReservationService ID: {}", id);
 
@@ -241,6 +268,7 @@ public class ReservationServiceServiceImpl
      * Elimina todos los servicios de una reservación
      */
     @Transactional
+    @CacheEvict(value = "reservation_services", key = "'byReservation_' + #reservationId")
     public void deleteAllByReservationId(Long reservationId) {
         log.info("Eliminando todos los servicios de la Reservation ID: {}", reservationId);
 

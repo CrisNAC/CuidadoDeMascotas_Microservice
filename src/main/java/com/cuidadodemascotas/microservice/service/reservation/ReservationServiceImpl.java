@@ -18,6 +18,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -37,6 +41,7 @@ public class ReservationServiceImpl
     private final IUserRepository ownerRepository;
     private final IUserRepository carerRepository;
     private final ReservationMapper reservationMapper;
+    private final CacheManager cacheManager;
 
     protected ReservationResponseDTO convertEntityToDto(Reservation entity) {
         return reservationMapper.toDto(entity);
@@ -55,11 +60,19 @@ public class ReservationServiceImpl
                 pageable.getPageNumber(), pageable.getPageSize());
 
         Page<Reservation> page = reservationRepository.findByActiveTrue(pageable);
-
         log.info("Se encontraron {} Reservations en la página {}",
                 page.getNumberOfElements(), page.getNumber());
 
-        return page.map(reservationMapper::toDto);
+        Page<ReservationResponseDTO> dtos = page.map(reservationMapper::toDto);
+        // Cache individual de reservas
+        dtos.forEach(reservation -> {
+            cacheManager.getCache("reservations")
+                    .put("byId_" + reservation.getId(), reservation);
+            log.info("Reserva con ID: {} cacheada individualmente.", reservation.getId());
+        });
+        log.info("Todas las reservas cargadas en memoria y cacheadas individualmente.");
+
+        return dtos;
     }
 
     /**
@@ -67,6 +80,7 @@ public class ReservationServiceImpl
      * Válida que owner y carer existan y estén activos
      */
     @Transactional
+    @CachePut(value = "reservations", key = "'byId_' + #result.id")
     public ReservationResponseDTO save(ReservationRequestDTO requestDTO) {
         log.info("Iniciando creación de Reservation - OwnerId: {}, CarerId: {}",
                 requestDTO.getOwnerId(), requestDTO.getCarerId());
@@ -102,6 +116,7 @@ public class ReservationServiceImpl
         // Guardar
         Reservation saved = reservationRepository.save(reservation);
         log.info("Reservation creada exitosamente con ID: {}", saved.getId());
+        log.info("Reserva guardada con ID: {}, almacenada en caché.", saved.getId());
 
         return reservationMapper.toDto(saved);
     }
@@ -110,6 +125,7 @@ public class ReservationServiceImpl
      * Obtiene una reservación por ID
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = "reservations", key = "'byId_' + #id")
     public ReservationResponseDTO getById(Long id) {
         log.info("Buscando Reservation por ID: {}", id);
 
@@ -127,6 +143,7 @@ public class ReservationServiceImpl
      * Actualiza una reservación existente
      */
     @Transactional
+    @CachePut(value = "reservations", key = "'byId_' + #id")
     public ReservationResponseDTO update(Long id, ReservationRequestDTO requestDTO) {
         log.info("Actualizando Reservation ID: {}", id);
 
@@ -181,6 +198,7 @@ public class ReservationServiceImpl
      * Borrado lógico de una reservación
      */
     @Transactional
+    @CacheEvict(value = "reservations", key = "'byId_' + #id")
     public void delete(Long id) {
         log.info("Eliminando (borrado lógico) Reservation ID: {}", id);
 
