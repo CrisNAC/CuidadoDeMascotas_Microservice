@@ -21,6 +21,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 
@@ -37,7 +39,12 @@ public class ReservationController {
 
     private final ReservationServiceImpl reservationServiceImpl;
 
-    // ===== CREATE =====
+    /**
+     * Crear una nueva reservación
+     * @param requestDTO
+     * @return
+     */
+    @PreAuthorize("hasAnyAuthority('ROLE_CARER', 'ROLE_OWNER')")
     @Operation(summary = "Crear una nueva reservación",
             description = "Crea una nueva reservación validando owner, carer y disponibilidad")
     @ApiResponses(value = {
@@ -60,7 +67,13 @@ public class ReservationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // ===== UPDATE =====
+    /**
+     * Actualizar una reservación existente
+     * @param id
+     * @param requestDTO
+     * @return
+     */
+    @PreAuthorize("hasAnyAuthority('ROLE_CARER', 'ROLE_OWNER')")
     @Operation(summary = "Actualizar una reservación",
             description = "Actualiza una reservación existente por su ID")
     @ApiResponses(value = {
@@ -83,7 +96,12 @@ public class ReservationController {
         return ResponseEntity.ok(response);
     }
 
-    // ===== GetById =====
+    /**
+     * Obtener una reservación por ID
+     * @param id
+     * @return
+     */
+    @PreAuthorize("hasAnyAuthority('ROLE_CARER', 'ROLE_OWNER')")
     @Operation(summary = "Obtener reservación por ID",
             description = "Obtiene una reservación específica por su ID")
     @ApiResponses(value = {
@@ -103,7 +121,15 @@ public class ReservationController {
         return ResponseEntity.ok(response);
     }
 
-    // ===== GET ALL  =====
+    /**
+     * Listar todas las reservaciones con paginación
+     * @param page
+     * @param size
+     * @param sortBy
+     * @param sortDir
+     * @return
+     */
+    @PreAuthorize("hasAnyAuthority('ROLE_CARER', 'ROLE_OWNER')")
     @Operation(summary = "Listar todas las reservaciones",
             description = "Obtiene todas las reservaciones activas con paginación")
     @ApiResponses(value = {
@@ -133,7 +159,20 @@ public class ReservationController {
         return ResponseEntity.ok(response);
     }
 
-    // ===== GET BY FILTERS =====
+    /**
+     * Buscar reservaciones con filtros opcionales y paginación
+     * @param ownerId
+     * @param carerId
+     * @param state
+     * @param startDate
+     * @param endDate
+     * @param page
+     * @param size
+     * @param sortBy
+     * @param sortDir
+     * @return
+     */
+    @PreAuthorize("hasAnyAuthority('ROLE_CARER', 'ROLE_OWNER')")
     @Operation(summary = "Buscar reservaciones con filtros",
             description = "Busca reservaciones aplicando filtros opcionales con paginación")
     @ApiResponses(value = {
@@ -171,7 +210,12 @@ public class ReservationController {
         return ResponseEntity.ok(response);
     }
 
-    // ===== DELETE =====
+    /**
+     * Eliminar una reservación (borrado lógico)
+     * @param id
+     * @return
+     */
+    @PreAuthorize("hasAnyAuthority('ROLE_CARER', 'ROLE_OWNER')")
     @Operation(summary = "Eliminar reservación (borrado lógico)",
             description = "Realiza un borrado lógico de la reservación (marca como inactiva)")
     @ApiResponses(value = {

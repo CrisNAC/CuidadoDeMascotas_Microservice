@@ -19,6 +19,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -31,7 +33,12 @@ public class ReservationServiceController {
 
     private final ReservationServiceServiceImpl reservationServiceServiceImpl;
 
-    // ===== CREATE =====
+    /**
+     * Crear una nueva relación Reservation-Service
+     * @param requestDTO
+     * @return
+     */
+    @PreAuthorize("hasAnyAuthority('ROLE_CARER', 'ROLE_OWNER')")
     @Operation(summary = "Crear una nueva relación Reservation-Service",
             description = "Crea un nuevo vínculo entre una reservación y un servicio, validando duplicados.")
     @ApiResponses(value = {
@@ -54,7 +61,12 @@ public class ReservationServiceController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // ===== GET BY ID =====
+    /**
+     * Obtener relación por ID
+     * @param id
+     * @return
+     */
+    @PreAuthorize("hasAnyAuthority('ROLE_CARER', 'ROLE_OWNER')")
     @Operation(summary = "Obtener relación por ID",
             description = "Obtiene una relación Reservation-Service por su ID")
     @ApiResponses(value = {
@@ -74,7 +86,15 @@ public class ReservationServiceController {
         return ResponseEntity.ok(response);
     }
 
-    // ===== FIND ALL =====
+    /**
+     * Listar todas las relaciones con paginación
+     * @param page
+     * @param size
+     * @param sortBy
+     * @param sortDir
+     * @return
+     */
+    @PreAuthorize("hasAnyAuthority('ROLE_CARER', 'ROLE_OWNER')")
     @Operation(summary = "Listar todas las relaciones",
             description = "Obtiene todas las relaciones Reservation-Service activas con paginación")
     @ApiResponses(value = {
@@ -100,7 +120,17 @@ public class ReservationServiceController {
         return ResponseEntity.ok(response);
     }
 
-    // ===== SEARCH =====
+    /**
+     * Buscar relaciones con filtros opcionales y paginación
+     * @param reservationId
+     * @param serviceId
+     * @param page
+     * @param size
+     * @param sortBy
+     * @param sortDir
+     * @return
+     */
+    @PreAuthorize("hasAnyAuthority('ROLE_CARER', 'ROLE_OWNER')")
     @Operation(summary = "Buscar relaciones con filtros",
             description = "Busca relaciones Reservation-Service aplicando filtros opcionales con paginación")
     @ApiResponses(value = {
@@ -128,7 +158,12 @@ public class ReservationServiceController {
         return ResponseEntity.ok(response);
     }
 
-    // ===== FIND BY RESERVATION =====
+    /**
+     * Obtener servicios por reservación
+     * @param reservationId
+     * @return
+     */
+    @PreAuthorize("hasAnyAuthority('ROLE_CARER', 'ROLE_OWNER')")
     @Operation(summary = "Obtener servicios de una reservación",
             description = "Obtiene todos los servicios asociados a una reservación específica")
     @GetMapping("/by-reservation/{reservationId}")
@@ -143,7 +178,12 @@ public class ReservationServiceController {
         return ResponseEntity.ok(response);
     }
 
-    // ===== FIND BY SERVICE =====
+    /**
+     * Obtener reservaciones por servicio
+     * @param serviceId
+     * @return
+     */
+    @PreAuthorize("hasAnyAuthority('ROLE_CARER', 'ROLE_OWNER')")
     @Operation(summary = "Obtener reservaciones de un servicio",
             description = "Obtiene todas las reservaciones que utilizan un servicio específico")
     @GetMapping("/by-service/{serviceId}")
@@ -158,7 +198,13 @@ public class ReservationServiceController {
         return ResponseEntity.ok(response);
     }
 
-    // ===== UPDATE (SIMPLE) =====
+    /**
+     * Actualizar relación Reservation-Service
+     * @param id
+     * @param requestDTO
+     * @return
+     */
+    @PreAuthorize("hasAnyAuthority('ROLE_CARER', 'ROLE_OWNER')")
     @Operation(summary = "Actualizar relación Reservation-Service",
             description = "Modifica una relación existente entre una reservación y un servicio")
     @ApiResponses(value = {
@@ -182,7 +228,12 @@ public class ReservationServiceController {
     }
 
 
-    // ===== DELETE (LOGICAL) =====
+    /**
+     * Eliminar relación Reservation-Service (borrado lógico)
+     * @param id
+     * @return
+     */
+    @PreAuthorize("hasAnyAuthority('ROLE_CARER', 'ROLE_OWNER')")
     @Operation(summary = "Eliminar relación (borrado lógico)",
             description = "Realiza un borrado lógico de la relación Reservation-Service (marca como inactiva)")
     @ApiResponses(value = {
@@ -201,7 +252,12 @@ public class ReservationServiceController {
         return ResponseEntity.noContent().build();
     }
 
-    // ===== DELETE ALL BY RESERVATION =====
+    /**
+     * Eliminar todas las relaciones por reservación
+     * @param reservationId
+     * @return
+     */
+    @PreAuthorize("hasAnyAuthority('ROLE_CARER', 'ROLE_OWNER')")
     @Operation(summary = "Eliminar todas las relaciones de una reservación",
             description = "Elimina todas las relaciones Reservation-Service asociadas a una reservación específica")
     @ApiResponses(value = {
