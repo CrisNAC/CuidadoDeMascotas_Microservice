@@ -26,7 +26,7 @@ public class RedisCacheConfig {
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
         ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule()); // 👈 Soporte para fechas Java 8
+        objectMapper.registerModule(new JavaTimeModule());
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
         objectMapper.activateDefaultTyping(objectMapper.getPolymorphicTypeValidator(), ObjectMapper.DefaultTyping.NON_FINAL);
 
@@ -49,11 +49,11 @@ public class RedisCacheConfig {
 
         // Servicios de reserva (TTL 30 min)
         cacheConfigurations.put("reservation_services",
-                defaultCacheConfig.entryTtl(Duration.ofMinutes(30)).prefixCacheNameWith("reservationServices::"));
+                defaultCacheConfig.entryTtl(Duration.ofMinutes(30)).prefixCacheNameWith("reservations::"));
 
         // Usuarios de reserva (TTL 10 min)
         cacheConfigurations.put("reservation_users",
-                defaultCacheConfig.entryTtl(Duration.ofMinutes(10)).prefixCacheNameWith("reservationUsers::"));
+                defaultCacheConfig.entryTtl(Duration.ofMinutes(10)).prefixCacheNameWith("reservations::"));
 
         return RedisCacheManager.builder(redisConnectionFactory)
                 .cacheDefaults(defaultCacheConfig)
