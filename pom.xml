@@ -11,6 +11,7 @@
 	<groupId>com.cuidadodemascotas</groupId>
 	<artifactId>microservice</artifactId>
 	<version>1.0.0</version>
+    <packaging>war</packaging>
 	<name>microservice</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
@@ -55,6 +56,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+        <!-- Tomcat -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-tomcat</artifactId>
+            <scope>provided</scope>
         </dependency>
         <!-- Eureka -->
         <dependency>
