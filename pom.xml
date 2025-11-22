@@ -200,6 +200,7 @@
     </dependencyManagement>
 
 	<build>
+        <finalName>reservations</finalName>
 		<plugins>
             <!-- Compilador -->
 			<plugin>
